@@ -14,29 +14,67 @@
     "appId": "PulseChat.App",
     "productName": "Pulse Chat",
     "copyright": "Pulse Chat",
-    "directories": { "app": "app-src", "output": "dist", "buildResources": "build" },
-    "files": ["**/*", "!**/*.map"],
+    "directories": {
+      "app": "app-src",
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "**/*",
+      "!**/*.map",
+      "!icon-dev.*"
+    ],
     "asar": true,
-    "asarUnpack": ["**/*.node"],
+    "asarUnpack": [
+      "**/*.node"
+    ],
     "npmRebuild": false,
-    "extraMetadata": { "pulseDist": true, "main": "main.js" },
+    "extraMetadata": {
+      "pulseDist": true,
+      "main": "main.js"
+    },
     "afterPack": "build/after-pack.js",
     "mac": {
       "category": "public.app-category.video",
       "icon": "app-src/icon.png",
-      "target": [{ "target": "dmg", "arch": ["universal"] }],
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
       "identity": null,
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
       "artifactName": "Pulse-Chat-${version}-mac.dmg",
       "extendInfo": {
-        "CFBundleDocumentTypes": [{ "CFBundleTypeName": "Twitch chat log", "CFBundleTypeRole": "Viewer", "LSHandlerRank": "Alternate", "LSItemContentTypes": ["public.json"] }]
+        "CFBundleDocumentTypes": [
+          {
+            "CFBundleTypeName": "Twitch chat log",
+            "CFBundleTypeRole": "Viewer",
+            "LSHandlerRank": "Alternate",
+            "LSItemContentTypes": [
+              "public.json"
+            ]
+          }
+        ]
       }
     },
-    "dmg": { "title": "Pulse Chat ${version}" },
+    "dmg": {
+      "title": "Pulse Chat ${version}"
+    },
     "win": {
       "icon": "app-src/icon.png",
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "artifactName": "Pulse-Chat-Setup-${version}.exe"
     },
     "nsis": {

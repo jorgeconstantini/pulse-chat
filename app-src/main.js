@@ -387,7 +387,7 @@ ipcMain.on('pulse-notify', (e, n) => {
   if (process.env.PULSE_TEST_NOTIFY) { try { fs.appendFileSync(process.env.PULSE_TEST_NOTIFY, JSON.stringify({ id: n.id, title, body }) + '\n'); } catch (err) { /* test only */ } }
   if (!Notification.isSupported()) return;
   const opts = { title, body, silent: false };
-  const icon = iconFile('icon.png');
+  const icon = iconFile(`${ICON}.png`);
   if (fs.existsSync(icon)) opts.icon = icon;
   if (process.platform === 'win32') {
     opts.toastXml = `<toast launch="pulse-chat"><visual><binding template="ToastGeneric"><text>${xmlEsc(title)}</text><text>${xmlEsc(body)}</text>`
@@ -897,20 +897,35 @@ let servers = null;
 
 // Twitch's player and other sites see plain Chrome, not "Electron" / "pulse-chat" (some sites treat unknown browsers differently)
 app.userAgentFallback = app.userAgentFallback.replace(/\s(Electron|pulse-chat|PulseChat)\/\S+/gi, '');
-const AUMID = 'PulseChat.App'; // Windows: groups the taskbar button and names the notifications "Pulse Chat"
+// Windows: groups the taskbar button and names the notifications. The owner's own copy (app 1.6.1: "Pulse Chat Dev",
+// orange icon) has its own, so it never shares a taskbar button or Start menu entry with an installed copy
+const AUMID = DIST ? 'PulseChat.App' : 'PulseChat.Dev';
+const APP_TITLE = DIST ? 'Pulse Chat' : 'Pulse Chat Dev';
+const ICON = DIST ? 'icon' : 'icon-dev'; // icon.png / .ico, or the orange icon-dev.png / .ico
 if (process.platform === 'win32') app.setAppUserModelId(AUMID);
 
 // Start menu and desktop shortcuts, made on the first start (and the Start menu one again if it goes missing: Windows
 // shows the app's notifications only with it). A desktop shortcut you delete stays deleted.
 function makeShortcuts() {
   if (process.platform !== 'win32' || !app.isPackaged || DIST) return; // a shared copy's installer makes its own
-  const icon = iconFile('icon.ico');
-  const link = { target: process.execPath, cwd: exeDir, appUserModelId: AUMID, description: 'Pulse Chat', icon: fs.existsSync(icon) ? icon : process.execPath, iconIndex: 0 };
-  const startMenu = path.join(app.getPath('appData'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Pulse Chat.lnk');
+  const icon = iconFile(`${ICON}.ico`);
+  const link = { target: process.execPath, cwd: exeDir, appUserModelId: AUMID, description: APP_TITLE, icon: fs.existsSync(icon) ? icon : process.execPath, iconIndex: 0 };
+  const programs = path.join(app.getPath('appData'), 'Microsoft', 'Windows', 'Start Menu', 'Programs');
+  const startMenu = path.join(programs, `${APP_TITLE}.lnk`);
   const flag = path.join(app.getPath('userData'), 'shortcuts-made');
+  // app 1.6.1: the shortcuts were called "Pulse Chat" before; those that point at this copy become "Pulse Chat Dev"
+  // (one that points elsewhere, like an installed copy's, is left alone)
+  const ours = (p) => { try { return path.resolve(shell.readShortcutLink(p).target) === path.resolve(process.execPath); } catch (e) { return false; } };
+  let hadDesktop = false;
+  for (const dir of [programs, app.getPath('desktop')]) {
+    const old = path.join(dir, 'Pulse Chat.lnk');
+    if (old !== path.join(dir, `${APP_TITLE}.lnk`) && fs.existsSync(old) && ours(old)) {
+      try { fs.unlinkSync(old); if (dir !== programs) hadDesktop = true; } catch (e) { /* in use */ }
+    }
+  }
   try { shell.writeShortcutLink(startMenu, fs.existsSync(startMenu) ? 'replace' : 'create', link); } catch (e) { /* no Start menu */ }
-  if (!fs.existsSync(flag)) {
-    try { shell.writeShortcutLink(path.join(app.getPath('desktop'), 'Pulse Chat.lnk'), 'create', link); } catch (e) { /* no desktop */ }
+  if (!fs.existsSync(flag) || hadDesktop) {
+    try { shell.writeShortcutLink(path.join(app.getPath('desktop'), `${APP_TITLE}.lnk`), 'replace', link); } catch (e) { /* no desktop */ }
     try { fs.writeFileSync(flag, new Date().toISOString()); } catch (e) { /* no matter */ }
   }
 }
@@ -952,11 +967,12 @@ if (!app.requestSingleInstanceLock()) {
     for (const port of PORTS) { servers = await listen(port); if (servers) { servers.port = port; break; } }
     if (!servers) { dialog.showErrorBox('Pulse Chat', `Ports ${PORTS[0]}-${PORTS[PORTS.length - 1]} are all taken by other programs, so Pulse Chat can't start.`); app.quit(); return; }
     if (!pagePath()) { dialog.showErrorBox('Pulse Chat', `chat-pulse.html was not found. Keep the app folder inside the folder that has chat-pulse.html (looked in: ${searchDirs.join(', ')}).`); app.quit(); return; }
-    const icon = iconFile('icon.png');
+    const icon = iconFile(`${ICON}.png`);
+    if (IS_MAC && !DIST && fs.existsSync(icon)) { try { app.dock.setIcon(nativeImage.createFromPath(icon)); } catch (e) { /* no Dock */ } }
     const glassy = GLASS !== 'none';
     const saved = loadWinState();
     win = new BrowserWindow({
-      width: 1600, height: 900, minWidth: 900, minHeight: 560, show: false, title: 'Pulse Chat',
+      width: 1600, height: 900, minWidth: 900, minHeight: 560, show: false, title: APP_TITLE,
       ...(saved ? saved.bounds : {}),
       backgroundColor: glassy ? '#00000000' : '#000c0b',
       icon: fs.existsSync(icon) ? nativeImage.createFromPath(icon) : undefined, autoHideMenuBar: true,
