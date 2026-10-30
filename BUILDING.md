@@ -28,24 +28,25 @@ Windows ask to confirm. The release page says how, and so does the text at the e
    - this `BUILDING.md`
 
    Then press **Commit changes**. (With GitHub Desktop or `git`, commit the same files.)
-4. Turn on the build: on the repository's page press **Add file → Create new file**, type the name
-   `.github/workflows/release.yml` (the slashes make the folders), open `build/release.yml` from this folder in
-   TextEdit / Notepad, copy all of it into the big box, and press **Commit changes**. (It lives in `build` here
-   because files in hidden folders like `.github` don't copy well through iCloud.)
+4. The build itself is `.github/workflows/release.yml` in the repository (`build/release.yml` here is a copy:
+   hidden folders like `.github` don't copy well through iCloud).
 
 ## Making a release
 
-1. Pick a version number higher than the last one, like `1.6.0`, then `1.6.1`, `1.7.0`.
-2. On the repository's page: **Releases → Draft a new release → Choose a tag**, type `v1.6.0` (with the `v`), press
-   **Create new tag**, then **Publish release** (title and text can stay empty).
-3. Open the **Actions** tab: "Release" is building the Mac and Windows installers (10 to 15 minutes). When both are
-   green, the release has `Pulse-Chat-1.6.0-mac.dmg` and `Pulse-Chat-Setup-1.6.0.exe` attached, with install notes
-   added under your text. (Until then the release has no installers, so wait for green before sending the link.)
-4. Send friends the release link: `https://github.com/<you>/pulse-chat/releases/latest`.
+The repository is https://github.com/jorgeconstantini/pulse-chat and Claude can push to it, so the usual way is to
+ask Claude to "publish a new version". By hand it's:
 
-To update everyone: change the files in the repository (upload the new `chat-pulse.html` / `app-src`), then make a
-new release with a higher number. Everyone's app shows **"Pulse Chat 1.6.1 is out"** within a few hours, or right
-away from the ? window → **Check for updates** (Mac: Pulse Chat menu → Check for Updates…).
+1. Change the files in the repository (the new `chat-pulse.html`, `app-src`…) and raise `"version"` in
+   `app-src/package.json` (like `1.6.0` → `1.6.1`, or `1.7.0` for bigger changes).
+2. That's it: when the change reaches `main` with a version that has no release yet, the **Release** workflow (Actions
+   tab) builds both installers (about 10 minutes) and publishes release `v1.6.1` with them attached. A change without a
+   new version number builds nothing.
+3. Friends download from `https://github.com/jorgeconstantini/pulse-chat/releases/latest`. People who already have
+   it see **"Pulse Chat 1.6.1 is out"** within a few hours, or right away from the ? window → **Check for updates**
+   (Mac: Pulse Chat menu → Check for Updates…).
+
+Publishing a release by hand on GitHub (Releases → Draft a new release, tag `v1.6.1`) also works: the workflow then
+attaches the installers to it.
 
 ## What's in here
 
