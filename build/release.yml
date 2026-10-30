@@ -1,18 +1,45 @@
 # Builds the Pulse Chat installers and publishes them as a GitHub release (see BUILDING.md).
-# Starts when a release is published on GitHub (Releases → Draft a new release, tag like v1.6.1), when a tag like
-# v1.6.1 is pushed (the release is then made here), or by hand from the
-# Actions tab (then it only builds; the installers are under the run's "Artifacts").
+# Starts by itself when a change reaches main with a new version number in app-src/package.json (one that has no
+# release yet): it builds both installers and publishes release v<version>. Also starts when a release is published by
+# hand (Releases → Draft a new release, tag like v1.6.1), and from the Actions tab (Run workflow: builds only).
 name: Release
 on:
+  push:
+    branches: [main]
   release:
     types: [published]
-  push:
-    tags: ['v*']
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      build: ${{ steps.v.outputs.build }}
+      publish: ${{ steps.v.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        shell: bash
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "release" ]]; then VERSION="${GITHUB_REF_NAME#v}"; else VERSION="$(node -p "require('./app-src/package.json').version")"; fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null; then
+              echo "v$VERSION is already released: nothing to build (raise the version in app-src/package.json to release)"
+              echo "build=false" >> "$GITHUB_OUTPUT"; echo "publish=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "build=true" >> "$GITHUB_OUTPUT"; echo "publish=true" >> "$GITHUB_OUTPUT"
+            fi
+          elif [[ "$GITHUB_EVENT_NAME" == "release" ]]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"; echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"; echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
   build:
+    needs: check
+    if: needs.check.outputs.build == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -30,9 +57,9 @@ jobs:
       - run: npm install --no-audit --no-fund
       - name: Build the installer
         shell: bash
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then VERSION="$(node -p "require('./app-src/package.json').version")"; fi
           echo "Building Pulse Chat $VERSION for $GITHUB_REPOSITORY"
           node build/prepare.js
           npx electron-builder ${{ matrix.args }} --publish never -c.extraMetadata.version="$VERSION" -c.extraMetadata.pulseRepo="$GITHUB_REPOSITORY"
@@ -44,8 +71,8 @@ jobs:
             dist/*.exe
           if-no-files-found: error
   release:
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [check, build]
+    if: needs.check.outputs.publish == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -54,6 +81,9 @@ jobs:
           merge-multiple: true
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ needs.check.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          name: Pulse Chat ${{ needs.check.outputs.version }}
           files: out/*
           append_body: true
           body: |
