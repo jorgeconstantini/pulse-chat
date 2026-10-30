@@ -1,0 +1,51 @@
+{
+  "name": "pulse-chat-build",
+  "private": true,
+  "description": "Builds the Pulse Chat installers (see BUILDING.md). The app itself is in app-src.",
+  "scripts": {
+    "dist:mac": "node build/prepare.js && electron-builder --mac --universal --publish never",
+    "dist:win": "node build/prepare.js && electron-builder --win --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "38.4.0",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "PulseChat.App",
+    "productName": "Pulse Chat",
+    "copyright": "Pulse Chat",
+    "directories": { "app": "app-src", "output": "dist", "buildResources": "build" },
+    "files": ["**/*", "!**/*.map"],
+    "asar": true,
+    "asarUnpack": ["**/*.node"],
+    "npmRebuild": false,
+    "extraMetadata": { "pulseDist": true, "main": "main.js" },
+    "afterPack": "build/after-pack.js",
+    "mac": {
+      "category": "public.app-category.video",
+      "icon": "app-src/icon.png",
+      "target": [{ "target": "dmg", "arch": ["universal"] }],
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "artifactName": "Pulse-Chat-${version}-mac.dmg",
+      "extendInfo": {
+        "CFBundleDocumentTypes": [{ "CFBundleTypeName": "Twitch chat log", "CFBundleTypeRole": "Viewer", "LSHandlerRank": "Alternate", "LSItemContentTypes": ["public.json"] }]
+      }
+    },
+    "dmg": { "title": "Pulse Chat ${version}" },
+    "win": {
+      "icon": "app-src/icon.png",
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "artifactName": "Pulse-Chat-Setup-${version}.exe"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Pulse Chat",
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

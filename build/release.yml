@@ -1,0 +1,59 @@
+# Builds the Pulse Chat installers and publishes them as a GitHub release (see BUILDING.md).
+# Starts when a release is published on GitHub (Releases → Draft a new release, tag like v1.6.1), or by hand from the
+# Actions tab (then it only builds; the installers are under the run's "Artifacts").
+name: Release
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            args: --mac --universal
+          - os: windows-latest
+            args: --win --x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - name: Build the installer
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then VERSION="$(node -p "require('./app-src/package.json').version")"; fi
+          echo "Building Pulse Chat $VERSION for $GITHUB_REPOSITORY"
+          node build/prepare.js
+          npx electron-builder ${{ matrix.args }} --publish never -c.extraMetadata.version="$VERSION" -c.extraMetadata.pulseRepo="$GITHUB_REPOSITORY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.os }}
+          path: |
+            dist/*.dmg
+            dist/*.exe
+          if-no-files-found: error
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: out/*
+          append_body: true
+          body: |
+            **Mac:** download the .dmg, open it and drag Pulse Chat to Applications. The first time, macOS says it can't check the app: open **System Settings → Privacy & Security**, scroll down and press **Open Anyway** (once).
+            **Windows:** download the Setup .exe and run it. If Windows says it protected your PC, press **More info → Run anyway** (once).
+            Already have Pulse Chat? Quit it and install this over it: your clips, transcripts and settings stay.
