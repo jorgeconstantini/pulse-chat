@@ -73,6 +73,9 @@ const SYNC_HOME = process.env.PULSE_NO_SYNC || DIST ? null : (SYNC_DIRS.find((d)
 }
 
 const { app, BrowserWindow, dialog, shell, Menu, nativeImage, Notification, ipcMain, session, powerSaveBlocker, screen } = require('electron');
+// A shared copy keeps its saved work, settings and ffmpeg in its own data folder ("Pulse Chat (installed)"), never in
+// the one this app uses on its owner's computers ("Pulse Chat"), so both can sit on the same computer without mixing
+if (DIST) app.setPath('userData', path.join(app.getPath('appData'), 'Pulse Chat (installed)'));
 const http = require('http');
 const https = require('https');
 const crypto = require('crypto');

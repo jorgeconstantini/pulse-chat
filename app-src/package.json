@@ -1,7 +1,7 @@
 {
   "name": "pulse-chat",
   "productName": "Pulse Chat",
-  "version": "1.6.0",
+  "version": "1.0.0",
   "description": "Pulse Chat desktop app: Twitch VOD chat analyzer",
   "main": "loader.js",
   "private": true

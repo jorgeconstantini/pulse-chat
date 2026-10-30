@@ -37,15 +37,15 @@ The repository is https://github.com/jorgeconstantini/pulse-chat and Claude can 
 ask Claude to "publish a new version". By hand it's:
 
 1. Change the files in the repository (the new `chat-pulse.html`, `app-src`…) and raise `"version"` in
-   `app-src/package.json` (like `1.6.0` → `1.6.1`, or `1.7.0` for bigger changes).
+   `app-src/package.json` (like `1.0.0` → `1.0.1`, or `1.1.0` for bigger changes).
 2. That's it: when the change reaches `main` with a version that has no release yet, the **Release** workflow (Actions
-   tab) builds both installers (about 10 minutes) and publishes release `v1.6.1` with them attached. A change without a
+   tab) builds both installers (about 10 minutes) and publishes release `v1.0.1` with them attached. A change without a
    new version number builds nothing.
 3. Friends download from `https://github.com/jorgeconstantini/pulse-chat/releases/latest`. People who already have
-   it see **"Pulse Chat 1.6.1 is out"** within a few hours, or right away from the ? window → **Check for updates**
+   it see **"Pulse Chat 1.0.1 is out"** within a few hours, or right away from the ? window → **Check for updates**
    (Mac: Pulse Chat menu → Check for Updates…).
 
-Publishing a release by hand on GitHub (Releases → Draft a new release, tag `v1.6.1`) also works: the workflow then
+Publishing a release by hand on GitHub (Releases → Draft a new release, tag `v1.0.1`) also works: the workflow then
 attaches the installers to it.
 
 ## What's in here
@@ -71,3 +71,7 @@ blocked…" and press **Open Anyway** (then your password). Only the first time.
 anyway**. It installs for that user (no administrator needed) with Start menu and desktop shortcuts.
 
 **Updating:** quit Pulse Chat and install the new version over the old one. Clips, transcripts and settings stay.
+
+**Uninstalling:** Mac: quit it and drag Pulse Chat from Applications to the Trash. Windows: Settings → Apps → Installed
+apps → Pulse Chat → Uninstall. Saved work stays in a folder called **Pulse Chat (installed)** (Mac:
+`~/Library/Application Support/`, Windows: `%APPDATA%`); delete that too to remove everything.
