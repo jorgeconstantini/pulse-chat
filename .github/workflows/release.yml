@@ -1,10 +1,13 @@
 # Builds the Pulse Chat installers and publishes them as a GitHub release (see BUILDING.md).
-# Starts when a release is published on GitHub (Releases → Draft a new release, tag like v1.6.1), or by hand from the
+# Starts when a release is published on GitHub (Releases → Draft a new release, tag like v1.6.1), when a tag like
+# v1.6.1 is pushed (the release is then made here), or by hand from the
 # Actions tab (then it only builds; the installers are under the run's "Artifacts").
 name: Release
 on:
   release:
     types: [published]
+  push:
+    tags: ['v*']
   workflow_dispatch:
 permissions:
   contents: write
